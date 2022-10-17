@@ -1,7 +1,10 @@
-﻿using System;
+﻿using ImageMagick;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
+using static System.Net.WebRequestMethods;
 
 namespace PhotoEditing
 {
@@ -9,12 +12,20 @@ namespace PhotoEditing
     {
         public static void Main(string[] args)
         {
-            Image image = Image.FromFile(@"C:\car.jpg");
+            //Image image = Image.FromFile(@"C:\car.jpg");
+
+
+            //RotateImage(CropImage(image, (float)0.97), (float)0.5).Save("tstr.jpeg");
+            CompressImage(new FileInfo("tstr.jpeg"));//.Save("compressed.jpeg");
+        }
+
+        public static Image CropImage(Image image, float percent)
+        {
             int width = image.Width;
             int height = image.Height;
             var bmp = new Bitmap(image, width, height);
-            double m = 0.97;
-            Rectangle rect = new Rectangle(0, (int)(height * (1-m)), width, (int)(height));
+            double m = percent;
+            Rectangle rect = new Rectangle(0, (int)(height * (1 - m)), width, (int)(height));
             //First we define a rectangle with the help of already calculated points  
             Bitmap OriginalImage = new Bitmap(image, width, height);
             //Original image  
@@ -27,11 +38,9 @@ namespace PhotoEditing
             g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
             //set image attributes  
             g.DrawImage(OriginalImage, 0, 0, rect, GraphicsUnit.Pixel);
-            _img.Save("tst.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
-
-            RotateImage(_img, (float)0.5).Save("tstr.jpeg");
-
+            return _img;
         }
+
         public static Image RotateImage(Image img, float rotationAngle)
         {
             //create an empty Bitmap image
@@ -60,6 +69,17 @@ namespace PhotoEditing
 
             //return the image
             return bmp;
+        }
+        public static void CompressImage(FileInfo sourceImage)
+        {
+            Console.WriteLine("Bytes before: " + sourceImage.Length);
+            var optimizer = new ImageOptimizer();
+            optimizer.Compress(sourceImage);
+
+            sourceImage.Refresh();
+            Console.WriteLine("Bytes after:  " + sourceImage.Length);
+            //Save compressed image
+            //return sourceImage;
         }
     }
 }
