@@ -12,11 +12,20 @@ namespace PhotoEditing
     {
         public static void Main(string[] args)
         {
-            //Image image = Image.FromFile(@"C:\car.jpg");
-
-
+            Image image = Image.FromFile(@"C:\car.jpeg");
+            Image cropped = CropImage(image, (float)0.97);
+            Image rotated = RotateImage(cropped, (float)1);
+            double proportion = (double)rotated.Width / (double)rotated.Height;
+            int maxWidth = 800;
+            Size newSizxe = new Size(maxWidth, (int)(maxWidth / proportion));
+            Image resized = ResizeImage((Bitmap)rotated, newSizxe);
+            //Image compressed = ResizeImage((Bitmap)rotated, new Size { Height = rotated.Height / 2, Width = rotated.Width / 2 });
+            resized.Save("all.png");
+            CompressImage(new FileInfo("all.png"));
             //RotateImage(CropImage(image, (float)0.97), (float)0.5).Save("tstr.jpeg");
-            CompressImage(new FileInfo("tstr.jpeg"));//.Save("compressed.jpeg");
+            
+            //ResizeImage((Bitmap)image, new Size { Height = image.Height/3, Width = image.Width/3 }).Save("resize.png");
+            //CompressImage(new FileInfo("resize.png"));//.Save("compressed.jpeg");
         }
 
         public static Image CropImage(Image image, float percent)
@@ -78,8 +87,44 @@ namespace PhotoEditing
 
             sourceImage.Refresh();
             Console.WriteLine("Bytes after:  " + sourceImage.Length);
-            //Save compressed image
-            //return sourceImage;
+        }
+        private static Bitmap ResizeImage(Bitmap mg, Size newSize)
+        {
+            double ratio = 0d;
+            double myThumbWidth = 0d;
+            double myThumbHeight = 0d;
+            int x = 0;
+            int y = 0;
+
+            Bitmap bp;
+
+            if ((mg.Width / Convert.ToDouble(newSize.Width)) > (mg.Height /
+            Convert.ToDouble(newSize.Height)))
+                ratio = Convert.ToDouble(mg.Width) / Convert.ToDouble(newSize.Width);
+            else
+                ratio = Convert.ToDouble(mg.Height) / Convert.ToDouble(newSize.Height);
+            myThumbHeight = Math.Ceiling(mg.Height / ratio);
+            myThumbWidth = Math.Ceiling(mg.Width / ratio);
+
+            //Size thumbSize = new Size((int)myThumbWidth, (int)myThumbHeight);
+            Size thumbSize = new Size((int)newSize.Width, (int)newSize.Height);
+            bp = new Bitmap(newSize.Width, newSize.Height);
+            x = (newSize.Width - thumbSize.Width) / 2;
+            y = (newSize.Height - thumbSize.Height);
+            // Had to add System.Drawing class in front of Graphics ---
+            System.Drawing.Graphics g = Graphics.FromImage(bp);
+            g.SmoothingMode = SmoothingMode.HighQuality;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            Rectangle rect = new Rectangle(x, y, thumbSize.Width, thumbSize.Height);
+            g.DrawImage(mg, rect, 0, 0, mg.Width, mg.Height, GraphicsUnit.Pixel);
+
+            return bp;
+
+        }
+        public static Image resizeImage(Image imgToResize, Size size)
+        {
+            return (Image)(new Bitmap(imgToResize, size));
         }
     }
 }
