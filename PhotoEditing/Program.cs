@@ -1,10 +1,11 @@
 ﻿using ImageMagick;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
-using static System.Net.WebRequestMethods;
+using System.Text.RegularExpressions;
 
 namespace PhotoEditing
 {
@@ -12,20 +13,41 @@ namespace PhotoEditing
     {
         public static void Main(string[] args)
         {
-            Image image = Image.FromFile(@"C:\car.jpeg");
-            Image cropped = CropImage(image, (float)0.97);
-            Image rotated = RotateImage(cropped, (float)1);
-            double proportion = (double)rotated.Width / (double)rotated.Height;
-            int maxWidth = 800;
-            Size newSizxe = new Size(maxWidth, (int)(maxWidth / proportion));
-            Image resized = ResizeImage((Bitmap)rotated, newSizxe);
-            //Image compressed = ResizeImage((Bitmap)rotated, new Size { Height = rotated.Height / 2, Width = rotated.Width / 2 });
-            resized.Save("all.png");
-            CompressImage(new FileInfo("all.png"));
-            //RotateImage(CropImage(image, (float)0.97), (float)0.5).Save("tstr.jpeg");
-            
-            //ResizeImage((Bitmap)image, new Size { Height = image.Height/3, Width = image.Width/3 }).Save("resize.png");
-            //CompressImage(new FileInfo("resize.png"));//.Save("compressed.jpeg");
+            string sDir = @"C:\Users\mielta\source\repos\CarDbHtmlParser\CarDbHtmlParser\bin\Debug\netcoreapp3.1\ph";
+            var list = DirSearch(sDir);
+            foreach (string s in list)
+            {
+                string imageName;
+                Regex regex = new Regex(@"\\");
+                var l = regex.Split(s);
+                imageName = l[l.Length - 1];
+                Image image = Image.FromFile(s);
+                Image cropped = CropImage(image, (float)0.92);
+                Image rotated = RotateImage(cropped, (float)0.5);
+                rotated.Save(imageName,ImageFormat.Jpeg);
+                //CompressImage(new FileInfo(imageName));
+            }
+        }
+        static List<string> DirSearch(string sDir)
+        {
+            List<string> list = new List<string>();
+            try
+            {
+                foreach (string f in Directory.GetFiles(sDir))
+                {
+                    list.Add(f);
+                }
+
+                foreach (string d in Directory.GetDirectories(sDir))
+                {
+                    list.AddRange(DirSearch(d));
+                }
+            }
+            catch (System.Exception excpt)
+            {
+                Console.WriteLine(excpt.Message);
+            }
+            return list;
         }
 
         public static Image CropImage(Image image, float percent)
@@ -81,46 +103,11 @@ namespace PhotoEditing
         }
         public static void CompressImage(FileInfo sourceImage)
         {
-            Console.WriteLine("Bytes before: " + sourceImage.Length);
+            //Console.WriteLine("Bytes before: " + sourceImage.Length);
             var optimizer = new ImageOptimizer();
             optimizer.Compress(sourceImage);
-
             sourceImage.Refresh();
-            Console.WriteLine("Bytes after:  " + sourceImage.Length);
-        }
-        private static Bitmap ResizeImage(Bitmap mg, Size newSize)
-        {
-            double ratio = 0d;
-            double myThumbWidth = 0d;
-            double myThumbHeight = 0d;
-            int x = 0;
-            int y = 0;
-
-            Bitmap bp;
-
-            if ((mg.Width / Convert.ToDouble(newSize.Width)) > (mg.Height /
-            Convert.ToDouble(newSize.Height)))
-                ratio = Convert.ToDouble(mg.Width) / Convert.ToDouble(newSize.Width);
-            else
-                ratio = Convert.ToDouble(mg.Height) / Convert.ToDouble(newSize.Height);
-            myThumbHeight = Math.Ceiling(mg.Height / ratio);
-            myThumbWidth = Math.Ceiling(mg.Width / ratio);
-
-            //Size thumbSize = new Size((int)myThumbWidth, (int)myThumbHeight);
-            Size thumbSize = new Size((int)newSize.Width, (int)newSize.Height);
-            bp = new Bitmap(newSize.Width, newSize.Height);
-            x = (newSize.Width - thumbSize.Width) / 2;
-            y = (newSize.Height - thumbSize.Height);
-            // Had to add System.Drawing class in front of Graphics ---
-            System.Drawing.Graphics g = Graphics.FromImage(bp);
-            g.SmoothingMode = SmoothingMode.HighQuality;
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-            Rectangle rect = new Rectangle(x, y, thumbSize.Width, thumbSize.Height);
-            g.DrawImage(mg, rect, 0, 0, mg.Width, mg.Height, GraphicsUnit.Pixel);
-
-            return bp;
-
+            //Console.WriteLine("Bytes after:  " + sourceImage.Length);
         }
         public static Image resizeImage(Image imgToResize, Size size)
         {
